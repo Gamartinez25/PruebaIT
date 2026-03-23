@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Heart, Users, Zap, CheckCircle, Loader } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select'
+import { ArrowLeft, Heart, Users, Zap, CheckCircle, Loader,AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function StreamerPaymentPage() {
@@ -17,7 +17,7 @@ export default function StreamerPaymentPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [transactionId, setTransactionId] = useState('')
-
+const [statusMsg, setStatusMsg] = useState({ type: '', text: '' })
   const tiers = {
     'tier-1': { name: 'Coffee ☕', amount: '5.00', description: 'Buy a coffee' },
     'tier-2': { name: 'Lunch 🍕', amount: '15.00', description: 'Fund a lunch' },
@@ -75,8 +75,10 @@ const totalInDollars = Math.round((baseAmount + (baseAmount * 0.029) + 0.30) * 1
       const txId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase()
       setTransactionId(txId)
       setPaymentSuccess(true)
+      setStatusMsg({ type: 'success', text: '¡Pago procesado correctamente!' })
     } catch (error) {
       console.error('Hubo un error al procesar el pago:', error)
+      setStatusMsg({ type: 'error', text: 'Hubo un problema al procesar tu tarjeta. Por favor, intenta de nuevo.' })
       // Aquí podrías agregar lógica para mostrar un mensaje de error al usuario
     } finally {
       setIsProcessing(false)
@@ -354,7 +356,21 @@ const totalInDollars = Math.round((baseAmount + (baseAmount * 0.029) + 0.30) * 1
                   <span className="text-lg font-bold text-accent">${(parseFloat(amount || '0') + parseFloat(amount || '0') * 0.029 + 0.30).toFixed(2)}</span>
                 </div>
               </div>
-
+             {/* NUEVO: Contenedor del mensaje de Éxito / Error en línea */}
+              {statusMsg.text && (
+                <div className={`p-4 rounded-lg flex items-start gap-3 text-sm font-medium ${
+                  statusMsg.type === 'success' 
+                    ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
+                    : 'bg-red-500/10 text-red-600 border border-red-500/20'
+                }`}>
+                  {statusMsg.type === 'success' ? (
+                    <CheckCircle className="w-5 h-5 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                  )}
+                  <p>{statusMsg.text}</p>
+                </div>
+              )}
               {/* Submit Button */}
               <Button
                 onClick={handlePayment}
