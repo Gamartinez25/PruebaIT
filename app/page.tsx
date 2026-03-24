@@ -39,49 +39,56 @@ const [statusMsg, setStatusMsg] = useState({ type: '', text: '' })
   }
 
   const handlePayment = async () => {
-    setIsProcessing(true)
-const baseAmount = parseFloat(amount || '0');
-const totalInDollars = Math.round((baseAmount + (baseAmount * 0.029) + 0.30) * 100) / 100;    console.log((totalInDollars*100))
-  // 2. Convertimos a centavos de forma segura (redondeando a entero)
-  const amountInCents = Math.round(totalInDollars * 100); 
+  setIsProcessing(true);
+  // Limpiamos mensajes previos al iniciar
+  setStatusMsg({ type: '', text: '' });
+
+  const baseAmount = parseFloat(amount || '0');
+  const totalInDollars = Math.round((baseAmount + (baseAmount * 0.029) + 0.30) * 100) / 100;
+  const amountInCents = Math.round(totalInDollars * 100);
+
   try {
-      const response = await fetch('https://icsox6x2u3.execute-api.us-east-2.amazonaws.com/dev/wallet/webhook/lithic', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const response = await fetch('https://icsox6x2u3.execute-api.us-east-2.amazonaws.com/dev/wallet/webhook/lithic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type: "card_authorization.approval_request",
+        token: "12345",
+        card_token: "364c3dd0-a211-4a97-b2f9-bdf725502b06",
+        amount: amountInCents,
+        merchant: {
+          descriptor: "StreamerPay",
+          city: "a",
+          state: "a",
+          country: "USA"
         },
-        body: JSON.stringify({
-          event_type: "card_authorization.approval_request",
-          token: "12345",
-          card_token: "364c3dd0-a211-4a97-b2f9-bdf725502b06",
-          amount: amountInCents,
-          merchant: {
-            descriptor: "StreamerPay",
-            city: "a",
-            state: "a",
-            country: "USA"
-          },
-          status: "AUTHORIZATION"
-        })
-      });
-        setStatusMsg({ type: 'success', text: '¡Pago procesado correctamente!' })
+        status: "AUTHORIZATION"
+      })
+    });
 
-      if (!response.ok) {
-          setStatusMsg({ type: 'error', text: 'Hubo un problema al procesar tu tarjeta. Por favor, intenta de nuevo.' })
-
-        throw new Error('Error en el procesamiento del pago');
-      }
-      
-    
-      const txId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase()
-      setTransactionId(txId)
-      setPaymentSuccess(true)
-    } catch (error) {
-      console.error('Hubo un error al procesar el pago:', error)
-    } finally {
-      setIsProcessing(false)
+    // 1. Si la respuesta NO es 200-299, lanzamos error para caer en el catch
+    if (!response.ok) {
+      throw new Error('Error en el procesamiento del pago');
     }
+
+    // 2. Si llegamos aquí, es un 200 OK. Ejecutamos lógica de éxito.
+    const txId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    setTransactionId(txId);
+    
+    // Mostramos el mensaje visual y activamos el Modal
+    setStatusMsg({ type: 'success', text: '¡Pago procesado correctamente!' });
+    setPaymentSuccess(true);
+
+  } catch (error) {
+    console.error('Hubo un error:', error);
+    setStatusMsg({ 
+      type: 'error', 
+      text: 'Hubo un problema al procesar tu tarjeta. Por favor, intenta de nuevo.' 
+    });
+  } finally {
+    setIsProcessing(false);
   }
+};
 
   const resetForm = () => {
     setPaymentSuccess(false)
